@@ -51,7 +51,7 @@ start()
   w_tp(id);
 
   // switch to supervisor mode and jump to main().
-  asm volatile("mret");
+  __asm__ volatile("mret");
 }
 
 // arrange to receive timer interrupts.

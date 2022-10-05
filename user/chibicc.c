@@ -4526,7 +4526,7 @@ void add_type(Node *node) {
 #define GP_MAX 8
 #define FP_MAX 8
 
-static FILE *output_file;
+static FILE *cgen_output_file;
 static int depth;
 static Obj *current_fn;
 
@@ -4536,9 +4536,9 @@ static void gen_stmt(Node *node);
 static void println(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  vfprintf(output_file, fmt, ap);
+  vfprintf(cgen_output_file, fmt, ap);
   va_end(ap);
-  fprintf(output_file, "\n");
+  fprintf(cgen_output_file, "\n");
 }
 
 static int count(void) {
@@ -4794,7 +4794,7 @@ static char *cast_table[][10] = {
   {f64i8, f64i16, f64i32, f64i64, f64u8, f64u16, f64u32, f64u64, f64f32, NULL},   // f64
 };
 
-static void cast(Type *from, Type *to) {
+static void cgen_cast(Type *from, Type *to) {
   if (to->kind == TY_VOID)
     return;
 
@@ -4990,7 +4990,7 @@ static void gen_expr(Node *node) {
     return;
   case ND_CAST:
     gen_expr(node->lhs);
-    cast(node->lhs->ty, node->ty);
+    cgen_cast(node->lhs->ty, node->ty);
     return;
   case ND_MEMZERO: {
     int offset = node->var->offset;
@@ -5526,7 +5526,7 @@ static void emit_text(Obj *prog) {
 }
 
 void codegen(Obj *prog, FILE *out) {
-  output_file = out;
+  cgen_output_file = out;
 
   File **files = get_input_files();
   for (int i = 0; files[i]; i++)
