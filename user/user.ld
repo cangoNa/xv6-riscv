@@ -4,8 +4,9 @@ ENTRY( _main )
 
 SECTIONS
 {
- . = 0x0;
- 
+  /*initially 0x00*/
+ . = 0x00;
+
   .text : {
     *(.text .text.*)
   }
