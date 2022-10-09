@@ -177,6 +177,11 @@ QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 
+QEMUOPTSGDB = -machine virt -bios none -kernel $K/kernel -m 128M -smp 1 -nographic
+QEMUOPTSGDB += -global virtio-mmio.force-legacy=false
+QEMUOPTSGDB += -drive file=fs.img,if=none,format=raw,id=x0
+QEMUOPTSGDB += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
 qemu: $K/kernel fs.img
 	$(QEMU) $(QEMUOPTS)
 
@@ -188,5 +193,4 @@ qemu-chibicc: $K/kernel fs.img-chibicc
 
 qemu-gdb: $K/kernel .gdbinit 
 	@echo "*** Now run 'gdb' in another window." 1>&2
-	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
-
+	$(QEMU) $(QEMUOPTSGDB) -S $(QEMUGDB)
