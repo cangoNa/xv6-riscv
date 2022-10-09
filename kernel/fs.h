@@ -28,7 +28,7 @@ struct superblock {
 // 12, 28, 60, 124, 252, 508
 //   +16 +32 +64  +128 +256
 // 508 でサイズの問題解決したけど、IPB がゼロになってる
-#define NDIRECT 508
+#define NDIRECT 12
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define MAXFILE (NDIRECT + NINDIRECT)
 

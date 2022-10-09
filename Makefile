@@ -98,6 +98,8 @@ _%: %.o $(ULIB)
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
 chibicc:
+	cd ~/chibicc-riscv && make chibicc-static 
+	cd ~/xv6-riscv 
 	cp ~/chibicc-riscv/chibicc ~/xv6-riscv/user/_chibicc
 
 $U/usys.S : $U/usys.pl
@@ -144,7 +146,10 @@ UPROGS=\
 	$U/_zombie\
 	# $U/_chibicc\
 
-fs.img: mkfs/mkfs README $(UPROGS) chibicc
+fs.img: mkfs/mkfs README $(UPROGS)
+	mkfs/mkfs fs.img README $(UPROGS)
+
+fs.img-chibicc: mkfs/mkfs README $(UPROGS) chibicc
 	mkfs/mkfs fs.img README $(UPROGS) $U/_chibicc
 
 -include kernel/*.d user/*.d
@@ -175,10 +180,13 @@ QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 qemu: $K/kernel fs.img
 	$(QEMU) $(QEMUOPTS)
 
+qemu-chibicc: $K/kernel fs.img-chibicc
+	$(QEMU) $(QEMUOPTS)
+
 .gdbinit: .gdbinit.tmpl-riscv
 	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
 
-qemu-gdb: $K/kernel .gdbinit fs.img
+qemu-gdb: $K/kernel .gdbinit 
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
