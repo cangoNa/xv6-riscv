@@ -24,12 +24,8 @@ struct superblock {
 
 #define FSMAGIC 0x10203040
 
-// default NIDIRECT is 12
-// 12, 28, 60, 124, 252, 508
-//   +16 +32 +64  +128 +256
-// 508 でサイズの問題解決したけど、IPB がゼロになってる
 #define NDIRECT 12
-#define NINDIRECT (BSIZE / sizeof(uint))
+#define NINDIRECT (BSIZE / sizeof(uint)*4)
 #define MAXFILE (NDIRECT + NINDIRECT)
 
 // On-disk inode structure

@@ -146,7 +146,6 @@ main(int argc, char *argv[])
     // in place of system binaries like rm and cat.
     if(shortname[0] == '_')
       shortname += 1;
-
     inum = ialloc(T_FILE);
 
     bzero(&de, sizeof(de));
@@ -154,12 +153,16 @@ main(int argc, char *argv[])
     strncpy(de.name, shortname, DIRSIZ);
     iappend(rootino, &de, sizeof(de));
 
-    while((cc = read(fd, buf, sizeof(buf))) > 0)
-      iappend(inum, buf, cc);
+    int c = 0;
+    while((cc = read(fd, buf, sizeof(buf))) > 0){
+        c ++;
+        iappend(inum, buf, cc);
+        printf("%s iappend %d\n",shortname, c);
+    }
+    
 
     close(fd);
   }
-
   // fix size of root inode dir
   rinode(rootino, &din);
   off = xint(din.size);
@@ -189,6 +192,8 @@ winode(uint inum, struct dinode *ip)
   struct dinode *dip;
 
   bn = IBLOCK(inum, sb);
+  // bn = NINDIRECT;
+
   rsect(bn, buf);
   dip = ((struct dinode*)buf) + (inum % IPB);
   *dip = *ip;
@@ -203,6 +208,8 @@ rinode(uint inum, struct dinode *ip)
   struct dinode *dip;
 
   bn = IBLOCK(inum, sb);
+  // bn = NINDIRECT;
+
   rsect(bn, buf);
   dip = ((struct dinode*)buf) + (inum % IPB);
   *ip = *dip;
@@ -213,8 +220,9 @@ rsect(uint sec, void *buf)
 {
   if(lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE)
     die("lseek");
-  if(read(fsfd, buf, BSIZE) != BSIZE)
+  if(read(fsfd, buf, BSIZE) != BSIZE){
     die("read");
+  }
 }
 
 uint
@@ -261,7 +269,7 @@ iappend(uint inum, void *xp, int n)
 
   rinode(inum, &din);
   off = xint(din.size);
-  // printf("append inum %d at off %d sz %d\n", inum, off, n);
+  printf("append inum %d at off %d sz %d\n", inum, off, n);
   while(n > 0){
     fbn = off / BSIZE;
     assert(fbn < MAXFILE);
@@ -274,6 +282,7 @@ iappend(uint inum, void *xp, int n)
       if(xint(din.addrs[NDIRECT]) == 0){
         din.addrs[NDIRECT] = xint(freeblock++);
       }
+      // ↓呼び出してエラー
       rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
       if(indirect[fbn - NDIRECT] == 0){
         indirect[fbn - NDIRECT] = xint(freeblock++);

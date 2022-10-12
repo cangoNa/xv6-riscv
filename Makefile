@@ -59,7 +59,7 @@ OBJDUMP = $(TOOLPREFIX)objdump
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
-CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
+CFLAGS += -ffreestanding -fno-common -mno-relax
 CFLAGS += -I.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
@@ -73,7 +73,7 @@ endif
 
 # --no-dynamic-linker はダメ
 # TODO リンカスクリプトの編集
-LDFLAGS = -z max-page-size=4096
+LDFLAGS = -z max-page-size=4096 
 #  -lm を外せば動く。こいつが悪さしてそう（でも無いとchibicc が動かん）
 
 $K/kernel: $(OBJS) $K/kernel.ld $U/initcode
@@ -82,7 +82,7 @@ $K/kernel: $(OBJS) $K/kernel.ld $U/initcode
 	$(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
 
 $U/initcode: $U/initcode.S
-	$(CC) $(CFLAGS) -march=rv64g -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
+	$(CC) $(CFLAGS) -nostdlib -march=rv64g -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $U/initcode.out $U/initcode.o
 	$(OBJCOPY) -S -O binary $U/initcode.out $U/initcode
 	$(OBJDUMP) -S $U/initcode.o > $U/initcode.asm
@@ -97,16 +97,19 @@ _%: %.o $(ULIB)
 	$(OBJDUMP) -S $@ > $*.asm
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
+# chibicc:
+# 	cd ~/chibicc-riscv && make stage2/chibicc
+# 	cd ~/xv6-riscv 
+# 	cp ~/chibicc-riscv/stage2/chibicc ~/xv6-riscv/user/_chibicc
+
 chibicc:
-	cd ~/chibicc-riscv && make chibicc-static 
-	cd ~/xv6-riscv 
-	cp ~/chibicc-riscv/chibicc ~/xv6-riscv/user/_chibicc
+	$(CC) $(CFLAGS) -o $U/_chibicc $U/chibicc.c $(LDFLAGS) -lm --static
 
 $U/usys.S : $U/usys.pl
 	perl $U/usys.pl > $U/usys.S
 
 $U/usys.o : $U/usys.S
-	$(CC) $(CFLAGS) -c -o $U/usys.o $U/usys.S
+	$(CC) $(CFLAGS) -nostdlib -c -o $U/usys.o $U/usys.S
 
 $U/_forktest: $U/forktest.o $(ULIB)
 	# forktest has less library code linked in - needs to be small
@@ -115,7 +118,7 @@ $U/_forktest: $U/forktest.o $(ULIB)
 	$(OBJDUMP) -S $U/_forktest > $U/forktest.asm
 
 mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
-	gcc -Werror -Wall -I. -o mkfs/mkfs mkfs/mkfs.c
+	gcc -Werror -Wall -g -I. -o mkfs/mkfs mkfs/mkfs.c 
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -128,14 +131,11 @@ UPROGS=\
 	$U/_echo\
 	$U/_forktest\
 	$U/_grep\
-	$U/_helloworld\
 	$U/_init\
 	$U/_kill\
 	$U/_ln\
 	$U/_ls\
 	$U/_mkdir\
-	$U/_pingpong\
-	$U/_primes\
 	$U/_rm\
 	$U/_sh\
 	$U/_sleep\
@@ -145,6 +145,9 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	# $U/_chibicc\
+	# $U/_pingpong\
+	# $U/_primes\
+	# $U/_helloworld\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
