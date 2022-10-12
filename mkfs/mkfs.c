@@ -264,7 +264,7 @@ iappend(uint inum, void *xp, int n)
   uint fbn, off, n1;
   struct dinode din;
   char buf[BSIZE];
-  uint indirect[NINDIRECT];
+  static uint indirect[NINDIRECT];
   uint x;
 
   rinode(inum, &din);
